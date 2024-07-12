@@ -1,4 +1,10 @@
-// chat_app.cc
+/**
+ * chat_app.cc
+ * Created by [Rohit Kumar] on [12-Jul-2024].
+ * Copyright © [2024] [Rohit Kumar]. All rights reserved.
+ * Licensed under the MIT License.
+ * See LICENSE file in the project root for full license information.
+ * */
 
 #include "chat_app.h"
 #include <iostream>
