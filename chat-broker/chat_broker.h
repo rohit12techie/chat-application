@@ -1,4 +1,4 @@
-// ChatServer.h
+// chat_broker.h
 #ifndef CHATSERVER_H
 #define CHATSERVER_H
 
@@ -9,9 +9,9 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
-class ChatServer {
+class ChatBroker {
 public:
-    ChatServer();
+    ChatBroker();
     void run(uint16_t port);
 
 private:
@@ -24,10 +24,10 @@ private:
     void handle_registration(websocketpp::connection_hdl hdl, std::string client_id);
     void handle_messages(std::string from, std::string to, std::string text);
 
-    server m_server;
-    std::map<std::string, websocketpp::connection_hdl> registered_clients; 
-    std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> m_clients;
-    std::mutex m_client_mutex;
+    server server_;
+    std::map<std::string, websocketpp::connection_hdl> registered_clients_; 
+    std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> clients_;
+    std::mutex client_mutex_;
 };
 
 #endif // CHATSERVER_H

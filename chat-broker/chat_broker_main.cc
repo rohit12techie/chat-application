@@ -1,5 +1,5 @@
-// chat_server_main.cpp
-#include "chat_server.h"
+// chat_broker_main.cpp
+#include "chat_broker.h"
 
 #include <thread>
 #include <vector>
@@ -10,8 +10,8 @@ int main() {
     const int num_clients = 5;
 
     // Start the server
-    ChatServer server;
-    server.run(port);
+    ChatBroker broker;
+    broker.run(port);
     
     return 0;
 }

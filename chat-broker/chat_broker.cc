@@ -1,39 +1,39 @@
-// ChatServer.cpp
-#include "chat_server.h"
+// chat_broker.cc
+#include "chat_broker.h"
 
-ChatServer::ChatServer() {
-    m_server.init_asio();
-    m_server.set_open_handler(bind(&ChatServer::on_open, this, std::placeholders::_1));
-    m_server.set_close_handler(bind(&ChatServer::on_close, this, std::placeholders::_1));
-    m_server.set_message_handler(bind(&ChatServer::on_message, this, std::placeholders::_1, std::placeholders::_2));
+ChatBroker::ChatBroker() {
+    server_.init_asio();
+    server_.set_open_handler(bind(&ChatBroker::on_open, this, std::placeholders::_1));
+    server_.set_close_handler(bind(&ChatBroker::on_close, this, std::placeholders::_1));
+    server_.set_message_handler(bind(&ChatBroker::on_message, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void ChatServer::run(uint16_t port) {
-    m_server.listen(port);
-    m_server.start_accept();
-    m_server.run();
+void ChatBroker::run(uint16_t port) {
+    server_.listen(port);
+    server_.start_accept();
+    server_.run();
 }
 
-void ChatServer::on_open(websocketpp::connection_hdl hdl) {
-    std::lock_guard<std::mutex> lock(m_client_mutex);
-    m_clients.insert(hdl);
+void ChatBroker::on_open(websocketpp::connection_hdl hdl) {
+    std::lock_guard<std::mutex> lock(client_mutex_);
+    clients_.insert(hdl);
     std::cout << "Client connected" << std::endl;
 }
 
-void ChatServer::on_close(websocketpp::connection_hdl hdl) {
-    std::lock_guard<std::mutex> lock(m_client_mutex);
-    m_clients.erase(hdl);
+void ChatBroker::on_close(websocketpp::connection_hdl hdl) {
+    std::lock_guard<std::mutex> lock(client_mutex_);
+    clients_.erase(hdl);
     std::cout << "Client disconnected" << std::endl;
 }
 
-void ChatServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr msg) {
-    std::lock_guard<std::mutex> lock(m_client_mutex);
+void ChatBroker::on_message(websocketpp::connection_hdl hdl, server::message_ptr msg) {
+    std::lock_guard<std::mutex> lock(client_mutex_);
     std::cout << "Received message: " << msg->get_payload() << std::endl;
     std::string response = "Received : " + msg->get_payload();
     
     msg->set_payload(response);
-    for (auto it : m_clients) {
-        m_server.send(it, msg);
+    for (auto it : clients_) {
+        server_.send(it, msg);
     }
 
     try {
@@ -66,10 +66,10 @@ void ChatServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr
 }
 
 
-void ChatServer::handle_registration(websocketpp::connection_hdl hdl, std::string client_id) {
+void ChatBroker::handle_registration(websocketpp::connection_hdl hdl, std::string client_id) {
 
 }
 
-void ChatServer::handle_messages(std::string from, std::string to, std::string text) {
+void ChatBroker::handle_messages(std::string from, std::string to, std::string text) {
 
 }
