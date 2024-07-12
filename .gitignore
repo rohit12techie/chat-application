@@ -1,2 +1,3 @@
 /build
 /.vscode
+/fix-linter.sh
