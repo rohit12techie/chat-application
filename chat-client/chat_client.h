@@ -5,31 +5,39 @@
  * Licensed under the MIT License.
  * See LICENSE file in the project root for full license information.
  * */
-#ifndef CHATCLIENT_H
-#define CHATCLIENT_H
+#ifndef CHATBROKERCLIENT_H
+#define CHATBROKERCLIENT_H
 
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
 #include <thread>
 #include <iostream>
 
-typedef websocketpp::client<websocketpp::config::asio_client> client;
-typedef std::function<void(std::string, std::string)> OnMessageReceived;
+typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
+typedef std::function<void(std::string, std::string)> func_on_message_received;
 
-class ChatClient {
-public:
-    ChatClient();
-    void run();
+class ChatBrokerClient {
+  public:
+    ChatBrokerClient(std::string app_client, func_on_message_received on_received_message);
+    ChatBrokerClient();
+    ~ChatBrokerClient();
+    void connect();
     void send_message(const std::string& message);
 
-private:
+  private:
     void on_open(websocketpp::connection_hdl hdl);
-    void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg);
-    OnMessageReceived onMessageReceived_;
-    client client_;
+    void on_message(websocketpp::connection_hdl hdl, ws_client::message_ptr msg);
+    void run(std::promise<void>& connection_promise);
+    func_on_message_received on_message_received_;
+
+    ws_client ws_client_;
     websocketpp::connection_hdl hdl_;
-    const uint16_t port = 9002;
+    const std::string app_client_;
+    std::thread client_thread_;
     const std::string uri_ = "ws://localhost:9002";
+    std::mutex mutex_;
+    std::condition_variable cv_;
+    bool connected_;
 };
 
-#endif // CHATCLIENT_H
+#endif // CHATBROKERCLIENT_H

@@ -6,48 +6,91 @@
  * See LICENSE file in the project root for full license information.
  * */
 
-#include "chat_app.h"
-
-#include <thread>
+#include "chat_client.h"
 #include <vector>
+#include <nlohmann/json.hpp>
 
-void chat_options(ChatApp& chatapp, std::string to) {
-    std::cout << "Chatting with " << to << std::endl;
-    while(1) {
-        std::cout << "Do you want to respond or wait " << std::endl;
-        std::cout << "1. respond" << std::endl;
-        std::cout << "2. wait" << std::endl;
+ChatBrokerClient* chatBrokerClient_ptr = nullptr;
+std::string g_from;
+std::string g_to;
 
-        char ch;
-        switch(ch) {
-            case 1: chatapp.send_message(to);
-                break;
-            case 2: {
-                while(1) {
-                    if(chatapp.received_flag == true) {
-                        chatapp.received_flag = false;
-                        break;
-                    }
-                    std::cout << "Waiting message from : " << to << std::endl;
-                    sleep(1);
-                }
-            }
+void clearInputBuffer() {
+    // Ignore all characters in the input buffer until newline
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    // Clear any error flags that might be set
+    std::cin.clear();
+}
+
+
+void handle_ping(){
+    std::cout << "On handle ping " << std::endl;
+    auto form_message = [&](){
+        nlohmann::json message_payload;
+        std::string text;
+        message_payload["message"]["from"] = g_from;
+        message_payload["message"]["to"] = g_to;
+        clearInputBuffer();
+        std::cout << "Enter first message: ";
+        std::getline(std::cin, text); // Read entire line from standard input
+        message_payload["message"]["text"] = text;
+        return message_payload.dump();
+    };
+    //std::cout << "Handle ping sends this message : " << form_message() << std::endl;
+    chatBrokerClient_ptr->send_message(form_message());
+}
+
+void handle_message(){
+    std::cout << "On handle message " << std::endl;
+    auto form_message = [&](){
+        nlohmann::json message_payload;
+        std::string text;
+        message_payload["message"]["from"] = g_from;
+        message_payload["message"]["to"] = g_to;
+        clearInputBuffer();
+        std::cout << "Enter next message: ";
+        std::getline(std::cin, text); // Read entire line from standard input
+        message_payload["message"]["text"] = text;
+        return message_payload.dump();
+    };
+    //std::cout << "Handle message sends this message : " << form_message() << std::endl;
+    chatBrokerClient_ptr->send_message(form_message());
+}
+
+void on_receive(std::string from, std::string message) {
+    //std::cout << "Received Message from " << from << " - " << message << std::endl;
+    try{
+        nlohmann::json jsonData = nlohmann::json::parse(message);
+        if (jsonData.contains("ping") && jsonData["ping"].contains("response")) {
+            //std::cout << "Got the ping message from client" << std::endl;
+            std::string response = jsonData["ping"]["response"];
+            std::cerr << "Got the ping message from server" << response << std::endl;
+            handle_ping();
         }
+        else if (jsonData.contains("message")) {
+            std::string from = jsonData["message"]["from"];
+            std::string message = jsonData["message"]["text"];
+            std::cerr << "Message : " << message << std::endl;
+            handle_message();
+        }
+        else {
+            std::cerr << "**** debug got some message : " << message << std::endl;
+        }
+    }catch(std::exception& e) {
+        std::cerr << "Exception while parsing the data : " << e.what() << std::endl;
     }
 }
 
 int main(int argc, char* argv[]) {
     if(argc < 2) {
-        std::cout << "Enter your client ID and to" << std::endl;
+        std::cout << "Enter your ID and other's ID" << std::endl;
         std::exit(0);
     }
-    std::string client = argv[0];
-    std::string to = argv[1];
-    std::cout << "client : " << client << std::endl;
+    g_from = argv[1];
+    g_to = argv[2];
+    std::cout << "from : " << g_from << " to : " << g_to << std::endl;
     try{
-        ChatApp chatapp(client);
-        chatapp.register_me();
-        chat_options(chatapp, to);
+        chatBrokerClient_ptr = new ChatBrokerClient(g_from, on_receive);
+        chatBrokerClient_ptr->connect();
     }
     catch (const std::exception& e) {
         std::cout << "ChatApp could not be started " << std::endl;
@@ -55,3 +98,26 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+// int main() {
+//     std::vector<std::thread> threads;
+//     for(int i = 0; i < 1; i++) {
+//         threads.emplace_back([&, i]() {
+//             std::stringstream ss;
+//             ss << "client" << i ;
+//             try{
+//                 //ChatBrokerClient chat_client(ss.str(), on_receive);
+//                 chatBrokerClient_ptr = new ChatBrokerClient(ss.str(), on_receive);
+//                 chatBrokerClient_ptr->connect();
+//             } catch(const std::exception& e) {
+//                 std::cout << "Exception occured during connect : " << e.what() << std::endl;
+//             }
+//         });
+//     }
+
+//     for(auto& thread: threads) {
+//         thread.join();
+//     }
+
+//     return 0;
+// }

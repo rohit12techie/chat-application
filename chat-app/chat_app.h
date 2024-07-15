@@ -14,16 +14,21 @@
 
 class ChatApp {
   public:
-    ChatApp(std::string client_id);
+    static void init(std::string mine, std::string other);
+  private:
+    void run();
+    ChatApp(std::string app_client_id);
+    ChatApp() = delete;
+    //~ChatApp() = delete;
+    static bool is_registered();
     void register_me();
     void send_message(const std::string& to);
     void receive_message(const std::string& from, const std::string& message);
     bool received_flag = false;
-  
-  private:
-    
-    std::string client_id_;
-    std::unique_ptr<ChatClient> smartptr_chatclient_;
+    std::string app_client_id_;
+    std::unique_ptr<ChatBrokerClient> chatbrokerclient_Ptr;
+    static bool registered_;
+    std::vector<std::string> contact_;
 };
 
 #endif // CHATAPP_H

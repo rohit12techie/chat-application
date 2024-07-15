@@ -18,8 +18,8 @@ int main() {
     const int num_clients = 5;
 
     // Start the server
-    ChatBroker broker;
+    ChatServerBroker broker;
     broker.run(port);
-    
+
     return 0;
 }
