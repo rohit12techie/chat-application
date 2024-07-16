@@ -15,9 +15,7 @@ std::string g_from;
 std::string g_to;
 
 void clearInputBuffer() {
-    // Ignore all characters in the input buffer until newline
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    // Clear any error flags that might be set
     std::cin.clear();
 }
 
@@ -31,11 +29,10 @@ void handle_ping(){
         message_payload["message"]["to"] = g_to;
         clearInputBuffer();
         std::cout << "Enter first message: ";
-        std::getline(std::cin, text); // Read entire line from standard input
+        std::getline(std::cin, text);
         message_payload["message"]["text"] = text;
         return message_payload.dump();
     };
-    //std::cout << "Handle ping sends this message : " << form_message() << std::endl;
     chatBrokerClient_ptr->send_message(form_message());
 }
 
@@ -48,20 +45,17 @@ void handle_message(){
         message_payload["message"]["to"] = g_to;
         clearInputBuffer();
         std::cout << "Enter next message: ";
-        std::getline(std::cin, text); // Read entire line from standard input
+        std::getline(std::cin, text);
         message_payload["message"]["text"] = text;
         return message_payload.dump();
     };
-    //std::cout << "Handle message sends this message : " << form_message() << std::endl;
     chatBrokerClient_ptr->send_message(form_message());
 }
 
 void on_receive(std::string from, std::string message) {
-    //std::cout << "Received Message from " << from << " - " << message << std::endl;
     try{
         nlohmann::json jsonData = nlohmann::json::parse(message);
         if (jsonData.contains("ping") && jsonData["ping"].contains("response")) {
-            //std::cout << "Got the ping message from client" << std::endl;
             std::string response = jsonData["ping"]["response"];
             std::cerr << "Got the ping message from server" << response << std::endl;
             handle_ping();
@@ -98,26 +92,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-// int main() {
-//     std::vector<std::thread> threads;
-//     for(int i = 0; i < 1; i++) {
-//         threads.emplace_back([&, i]() {
-//             std::stringstream ss;
-//             ss << "client" << i ;
-//             try{
-//                 //ChatBrokerClient chat_client(ss.str(), on_receive);
-//                 chatBrokerClient_ptr = new ChatBrokerClient(ss.str(), on_receive);
-//                 chatBrokerClient_ptr->connect();
-//             } catch(const std::exception& e) {
-//                 std::cout << "Exception occured during connect : " << e.what() << std::endl;
-//             }
-//         });
-//     }
-
-//     for(auto& thread: threads) {
-//         thread.join();
-//     }
-
-//     return 0;
-// }

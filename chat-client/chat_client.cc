@@ -20,13 +20,9 @@ ChatBrokerClient::ChatBrokerClient(std::string app_client, func_on_message_recei
 }
 
 ChatBrokerClient::~ChatBrokerClient(){
-    // if (client_thread_.joinable()) {
-    //     ws_client_.stop();
-    //     client_thread_.join();
-    // }
 }
 
-void ChatBrokerClient::run(std::promise<void>& connection_promise) {
+void ChatBrokerClient::run() {
 
     ws_client_.set_access_channels(websocketpp::log::alevel::all);
     ws_client_.clear_access_channels(websocketpp::log::alevel::frame_header | websocketpp::log::alevel::frame_payload);
@@ -43,23 +39,25 @@ void ChatBrokerClient::run(std::promise<void>& connection_promise) {
         ws_client_.connect(con);
         ws_client_.run();
     } catch (...) {
-        connection_promise.set_exception(std::current_exception());
+        //connection_promise.set_exception(std::current_exception());
+        throw;
     }
 }
 
 void ChatBrokerClient::connect() {
-    std::promise<void> connection_promise;
-    std::future<void> connection_future = connection_promise.get_future();
-    std::async(std::launch::async, &ChatBrokerClient::run, this, std::ref(connection_promise));
-    connection_future.get();
+    std::future<void> async_future = std::async(std::launch::async, &ChatBrokerClient::run, this);
+    try {
+        async_future.get();
+    } catch (const std::exception& e) {
+        std::cerr << "Async task threw an exception: " << e.what() << std::endl;
+        throw;
+    }
 }
 
 void ChatBrokerClient::on_open(websocketpp::connection_hdl hdl) {
     std::cout << "Connected to server" << std::endl;
-    //std::unique_lock<std::mutex> lock(mutex_);
     hdl_ = hdl;
     connected_ = true;
-    // cv_.notify_all();
 
     auto form_ping_payload = [&]() {
         nlohmann::json ping_payload;
@@ -71,7 +69,6 @@ void ChatBrokerClient::on_open(websocketpp::connection_hdl hdl) {
 }
 
 void ChatBrokerClient::send_message(const std::string& message) {
-    //std::unique_lock<std::mutex> lock(mutex_);
     websocketpp::lib::error_code ec;
     ws_client_.send(hdl_, message, websocketpp::frame::opcode::text, ec);
     if (ec) {
@@ -81,25 +78,9 @@ void ChatBrokerClient::send_message(const std::string& message) {
 
 
 void ChatBrokerClient::on_message(websocketpp::connection_hdl hdl, ws_client::message_ptr msg) {
-    //std::unique_lock<std::mutex> lock(mutex_);
     try {
         nlohmann::json jsonData = nlohmann::json::parse(msg->get_payload());
         on_message_received_("server", msg->get_payload());
-
-        // if (jsonData.contains("ping") && jsonData["ping"].contains("response")) {
-        //     std::cout << "Got the ping message from client" << std::endl;
-        //     std::string response = jsonData["ping"]["response"];
-        //     std::cout << "Got the ping message from server" << response << std::endl;
-        // }
-        // else if (jsonData.contains("message")) {
-        //     std::string from = jsonData["message"]["from"];
-        //     std::string message = jsonData["message"]["message"];
-        //     on_message_received_(from, message);
-        // }
-        // else {
-        //     std::cout << "**** debug got some message : " << msg->get_payload() << std::endl;
-
-        // }
     } catch (const std::exception& e) {
         std::cerr << "Parse error: " << e.what() << std::endl;
     }
