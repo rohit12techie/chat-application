@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Boost REQUIRED system)
 
 include_directories(${Boost_INCLUDE_DIRS})
-include_directories(${CMAKE_SOURCE_DIR}/chat-client)
+include_directories(${CMAKE_SOURCE_DIR}/chat-broker-client)
 
-add_executable(ChatBrokerClient chat_client_main.cc chat_client.cc)
+add_executable(ChatBrokerClient chat_broker_client_main.cc chat_broker_client.cc)
 target_link_libraries(ChatBrokerClient ${Boost_LIBRARIES} pthread)

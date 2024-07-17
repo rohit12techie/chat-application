@@ -6,7 +6,7 @@
  * See LICENSE file in the project root for full license information.
  * */
 
-#include "chat_broker.h"
+#include "chat_broker_server.h"
 
 ChatServerBroker::ChatServerBroker() {
     server_.init_asio();

@@ -6,7 +6,7 @@
  * See LICENSE file in the project root for full license information.
  * */
 
-#include "chat_client.h"
+#include "chat_broker_client.h"
 #include <vector>
 #include <nlohmann/json.hpp>
 
