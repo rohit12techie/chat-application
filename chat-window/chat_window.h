@@ -12,6 +12,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <deque>
+#include "shared_queue.h"
 
 class ChatWindow {
   public:
@@ -27,6 +28,7 @@ class ChatWindow {
     std::string shared_message_;
     bool message_ready_ = false;
     std::deque<std::string> message_buffer_;
+    SharedQueue<std::string> shared_queue_;
 
     int type_window_height_;
     int type_window_width_;
