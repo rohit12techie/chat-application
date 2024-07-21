@@ -2,6 +2,7 @@
 
 ChatWindow::ChatWindow() : type_window_ptr(nullptr, &delwin), display_window_ptr(nullptr, &delwin){
     initscr();
+    refresh(); 
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
@@ -37,8 +38,10 @@ void ChatWindow::run() {
 
 void ChatWindow::onDisplayWindow() {
     while (true) {
+        std::unique_lock<std::mutex> lock(mtx_);
+	    cv_.wait(lock, [&]{ return message_ready_; });
+        
         shared_queue_.subscribe([this](const std::string& message) {
-            std::unique_lock<std::mutex> lock(mtx_);
             message_buffer_.push_back(message);
         });
 
@@ -55,6 +58,7 @@ void ChatWindow::onDisplayWindow() {
             mvwprintw(display_window_ptr.get(), line++, 1, msg.c_str());
         }
         wrefresh(display_window_ptr.get());
+        message_ready_ = false;
     }
 }
 
@@ -91,10 +95,10 @@ void ChatWindow::onTypeWindow() {
         }
 
         //Send user input to the shared message
-        //std::unique_lock<std::mutex> lock(mtx_);
+        std::unique_lock<std::mutex> lock(mtx_);
         //shared_message_ = userInput;
         shared_queue_.publish(userInput);
-        //message_ready_ = true;
-        //cv_.notify_one();
+        message_ready_ = true;
+        cv_.notify_one();
     }
 }
